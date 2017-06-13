@@ -30,6 +30,24 @@ typedef struct Racun {
 } Racun_t;
 
 
+int odabirFilma(Film_t *filmovi, int brFilmova) {
+  while (1) {
+    system("cls");
+    int i;
+    for (i = 0; i < brZanrova, i++) {
+      printf("%i. %s", filmovi[i]->id, filmovi[i]->ime);
+    }
+    printf("> ");
+    scanf("%i", &o);
+    if ((o > 1 || o <= brFilmova) && filmovi[o]->stanje) {
+      filmovi[o]->stanje = 0;
+      filmovi[o]->brIzdavan++;
+      break;
+    }
+  }
+  return o;
+}
+
 int dodavanjeFilma() {
   FILE *f = fopen(videotekaFajl, "rb");
   int brFilmova;
@@ -94,17 +112,7 @@ int brisanjeFilma() {
     fread(filmovi, sizeof(Film_t), brFilmova, f);
   }
   fclose(f);
-  int o = 0;
-  while (1) {
-    int i;
-    for (i = 0; i < brZanrova, i++) {
-      printf("%i. %s", zanrovi[i]->id, zanrovi[i]->ime);
-    }
-    printf("> ");
-    scanf("%i", &o);
-    if (o > 1 || o <= brZanrova)
-      break;
-  }
+  int o = odabirFilma(filmovi, brFilmova);
   filmovi[o]->status = 1;
   f = fopen(videotekaFajl, "wb");
   if (f != NULL) {
@@ -129,7 +137,60 @@ int azuriranjeFilma() {
     fread(filmovi, sizeof(Film_t), brFilmova, f);
   }
   fclose(f);
-  int o = 0;
+  int o = odabirFilma(filmovi, brFilmova);
+
+  printf("Unesite ime filma (%s): ", filmovi[o]->ime);
+  fgets(filmovi[o]->ime, 50, stdin);
+  fflush(stdin);
+
+  filmovi[o]->status = 1;
+  f = fopen(videotekaFajl, "wb");
+  if (f != NULL) {
+    fwrite(&brFilmova, sizeof(int), 1, f);
+    fwrite(filmovi, sizeof(Film_t), brFilmova, f);
+  }
+  fclose(f);
+  free(filmovi);
+  return 0;
+}
+
+int dodavanjeZanra() { // srki
+  Zanr_t zanrovi;
+  int brZanrova;
+  FILE *f = fopen(zanroviFajl, "rb");
+  if (f != NULL) {
+    fread(&brZanrova, sizeof(int), 1, f);
+    zanrovi = malloc(sizeof(Zanr_t) * brZanrova);
+    fread(zanrovi, sizeof(Zanr_t), brZanrova, f);
+  }
+  fclose(f);
+  brZanrova++;
+  realloc(zanrovi, sizeof(Zanr_t) * brZanrova);
+  zanrovi[brZanrova-1]->id = brZanrova - 1;
+  printf("Uneiste ime zanra: ");
+  scanf("%s", zanrovi[brZanrova-1]->ime);
+  zanrovi[brZanrova-1]->status = 0;
+  f = fopen(zanroviFajl, "wb");
+  if (f != NULL) {
+    fwrite(&brZanrova, sizeof(int), 1, f);
+    fwrite(zanrovi, sizeof(Zanr_t), brZanrova, f);
+  }
+  fclose(f);
+  free(zanrovi);
+  return 0;
+}
+
+int azuriranjeZanra(){ // srki
+  Zanr_t zanrovi;
+  int brZanrova;
+  FILE *f = fopen(zanroviFajl, "rb");
+  if (f != NULL) {
+    fread(&brZanrova, sizeof(int), 1, f);
+    zanrovi = malloc(sizeof(Zanr_t) * brZanrova);
+    fread(zanrovi, sizeof(Zanr_t), brZanrova, f);
+  }
+  fclose(f);
+  int o;
   while (1) {
     int i;
     for (i = 0; i < brZanrova, i++) {
@@ -140,27 +201,51 @@ int azuriranjeFilma() {
     if (o > 1 || o <= brZanrova)
       break;
   }
-
-  char naziv[50];
-  printf("Unesite ime filma: ");
-  fgets(naziv, 50, stdin);
-  fflush(stdin);
-  strcpy(filmovi[o]->ime, naziv);
-
-  filmovi[o]->status = 1;
-  FILE *f = fopen(videotekaFajl, "wb");
+  printf("Unesite izmenu imena zanra (%s): ", zanrovi[o]->ime);
+  scanf("%s", zanrovi[o]->ime);
+  f = fopen(zanroviFajl, "wb");
   if (f != NULL) {
-    fwrite(&brFilmova, sizeof(int), 1, f);
-    fwrite(filmovi, sizeof(Film_t), brFilmova, f);
+    fwrite(&brZanrova, sizeof(int), 1, f);
+    fwrite(zanrovi, sizeof(Zanr_t), brZanrova, f);
   }
   fclose(f);
-  free(filmovi);
+  free(zanrovi);
+  return 0;
+}
+int brisanjeZanra() { // srki
+  Zanr_t zanrovi;
+  int brZanrova;
+  FILE *f = fopen(zanroviFajl, "rb");
+  if (f != NULL) {
+    fread(&brZanrova, sizeof(int), 1, f);
+    zanrovi = malloc(sizeof(Zanr_t) * brZanrova);
+    fread(zanrovi, sizeof(Zanr_t), brZanrova, f);
+  }
+  fclose(f);
+  int o;
+  while (1) {
+    int i;
+    for (i = 0; i < brZanrova, i++) {
+      printf("%i. %s", zanrovi[i]->id, zanrovi[i]->ime);
+    }
+    printf("> ");
+    scanf("%i", &o);
+    if (o > 1 || o <= brZanrova)
+      break;
+  }
+  zanrovi[o]->status = 1;
+  f = fopen(zanroviFajl, "wb");
+  if (f != NULL) {
+    fwrite(&brZanrova, sizeof(int), 1, f);
+    fwrite(zanrovi, sizeof(Zanr_t), brZanrova, f);
+  }
+  fclose(f);
+  free(zanrovi);
   return 0;
 }
 
-int dodavanjeZanra();
-int brisanjeZanra();
 // kubini ispisi
+
 int izdavanjeFilma(int idIzdavaca) {
   FILE *f = fopen(videotekaFajl, "rb");
   int brFilmova;
@@ -301,11 +386,11 @@ int ispisRacuna() {
     printf("Vreme izdavanja filma: %i:%i", racuni[i]->vremeIzdavanja->tm_hour, racuni[i]->vremeIzdavanja->tm_min);
     printf("\nDa li zelite sledeci racun ili da prekinete pregled? (enter/q) ");
     int provera = 0;
-    while (provera != 'q') {
+    while (provera != 'q' && provera != '\n') {
       provera = fgetc(stdin);
       fflush(stdin);
-      if (provera == '\n')
-        continue;
     }
+    if (provera == 'q')
+      break;
   }
 }
