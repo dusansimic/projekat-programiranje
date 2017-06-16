@@ -29,6 +29,18 @@ typedef struct Racun {
   int idIzdavaca; // id radnika
 } Racun_t;
 
+int iscitajFilmove(Film_t *filmovi) {
+  FILE *f = fopen(videotekaFajl, "rb");
+  int brFilmova = 1;
+  realloc(filmovi, sizeof(Film_t) * brFilmova);
+  if (f != NULL) {
+    while (fread(filmovi, sizeof(Film_t), 1, f)) {
+      brFilmova++;
+      realloc(filmovi, sizeof(Film_t) * brFilmova);
+    }
+  }
+}
+
 
 int odabirFilma(Film_t *filmovi, int brFilmova) {
   int o;
@@ -103,8 +115,6 @@ int dodavanjeFilma() {
   return 0;
 }
 
-
-
 int brisanjeFilma() {
   Film_t *filmovi;
   int brFilmova;
@@ -126,9 +136,6 @@ int brisanjeFilma() {
   free(filmovi);
   return 0;
 }
-
-
-
 
 int azuriranjeFilma() {
   Film_t *filmovi;
@@ -160,6 +167,7 @@ int azuriranjeFilma() {
 int dodavanjeZanra() { // srki
   Zanr_t *zanrovi;
   int brZanrova;
+  printf("%i\n", brZanrova);
   FILE *f = fopen(zanroviFajl, "rb");
   if (f != NULL) {
     fseek(f, 0, SEEK_SET);
@@ -186,6 +194,7 @@ int dodavanjeZanra() { // srki
   free(zanrovi);
   return 0;
 }
+
 
 int azuriranjeZanra(){ // srki
   Zanr_t *zanrovi;
@@ -219,6 +228,7 @@ int azuriranjeZanra(){ // srki
   free(zanrovi);
   return 0;
 }
+
 int brisanjeZanra() { // srki
   Zanr_t *zanrovi;
   int brZanrova;
@@ -400,6 +410,37 @@ int ispisRacuna() {
     if (provera == 'q')
       break;
   }
+  return 0;
+}
+
+int ciscenjeFilmova() { // za posle, treba odraditi za sve datoteke
+  FILE *f = fopen(videotekaFajl, "rb");
+  int brFilmova;
+  Film_t *filmovi;
+  if (f != NULL) {
+    fread(&brFilmova, sizeof(int), 1, f);
+    filmovi = malloc(sizeof(Film_t) * brFilmova);
+    fread(filmovi, sizeof(Film_t), 1, f);
+  }
+  fclose(f);
+  Film_t *cistiFilmovi = malloc(0);
+  int brojac = 0;
+  int i;
+  for (i = 0; i < brFilmova; i++) {
+    if (filmovi[i].status) {
+      brojac++;
+      realloc(cistiFilmovi, sizeof(Film_t) * brojac);
+      cistiFilmovi[brojac-1] = filmovi[i];
+    }
+  }
+  free(filmovi);
+  f = fopen(videotekaFajl, "wb");
+  if (f != NULL) {
+    fwrite(&brFilmova, sizeof(int), 1, f);
+    fwrite(cistiFilmovi, sizeof(Film_t), brFilmova, f);
+  }
+  fclose(f);
+  free(cistiFilmovi);
   return 0;
 }
 
