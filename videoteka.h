@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 const char *videotekaFajl = "videoteka.dat";
 const char *zanroviFajl = "zanrovi.dat";
@@ -25,9 +26,35 @@ typedef struct Zanr {
 typedef struct Racun {
   int id;
   int idFilma;
-  struct tm *vremeIzdavanja;
+  char vreme[100];
   int idIzdavaca; // id radnika
 } Racun_t;
+
+char vreme[100];
+
+/*Vreme_t TrnVreme()
+{
+  time_t t;
+  time(&t);
+  struct tm *timeinfo;
+  timeinfo = localtime(&t);
+
+  Vreme_t vr;
+  
+  strftime(vr.vreme, 20, "%X", timeinfo);
+  strftime(vr.datum, 20, "%x", timeinfo);
+
+  return vr;
+}*/
+
+int trenutnoVreme() {
+  time_t t;
+  time(&t);
+  struct tm *timeinfo;
+  timeinfo = localtime(&t);
+  
+  return 0;
+}
 
 int iscitajFilmove(Film_t *filmovi) {
   FILE *f = fopen(videotekaFajl, "rb");
@@ -71,6 +98,7 @@ int iscitajRacune(Racun_t *racuni) {
       racuni = realloc(racuni, sizeof(Racun_t) * brRacuna);
     }
     fclose(f);
+    printf("Uspesno iscitano!\n");
   }
   brRacuna--;
   racuni = realloc(racuni, sizeof(Racun_t) * brRacuna);
@@ -95,6 +123,7 @@ int upisiZanrove(Zanr_t *zanrovi, int brZanrova) {
     int i;
     for (i = 0; i < brZanrova; i++) {
       int upisano = fwrite(&zanrovi[i], sizeof(Zanr_t), 1, f);
+      printf("Upisano je %i zanrova.\n", upisano);
     }
     fclose(f);
   } else
@@ -110,6 +139,7 @@ int upisiRacune(Racun_t *racuni, int brRacuna){
       fwrite(&racuni[i], sizeof(Racun_t), 1, f);
     }
     fclose(f);
+    printf("Uspesno upisano!\n");
   }
   return 0;
 }
@@ -160,13 +190,15 @@ int dodavanjeFilma() {
     printf("> ");
     scanf("%i", &o);
     fflush(stdin);
-    if (o >= 0 || o <= brZanrova)
+    if (o >= 0 && o < brZanrova)
       break;
   }
-  free(zanrovi);
+  
   filmovi[brFilmova-1].idZanr = o;
   upisiFilmove(filmovi, brFilmova);
   free(filmovi);
+  free(zanrovi);
+  
   return 0;
 }
 
@@ -338,38 +370,30 @@ int izdavanjeFilma(int idIzdavaca) {
   return 0;
 }
 
-struct tm* trenutnoVreme(){
+/*struct tm* trenutnoVreme(){
   time_t mytime;
   mytime = time(NULL);
   struct tm *timeInfo;
   timeInfo = localtime(&mytime);
   timeInfo->tm_year+=1900;
   return timeInfo;
-}
+}*/
 
 int dodavanjeRacuna(int idRad, int idFilm) {
-  FILE *f = fopen(racuniFajl, "rb");
-  int brRacuna;
-  Racun_t *racuni;
-  if (f != NULL) {
-    fseek(f, 0, SEEK_SET);
-    fread(&brRacuna, sizeof(int), 1, f);
-    racuni = malloc(sizeof(Racun_t) * brRacuna);
-    fread(racuni, sizeof(Racun_t), brRacuna, f);
-  }
-  fclose(f);
+  Racun_t *racuni = malloc(0);
+  int brRacuna = iscitajRacune(racuni);
+  
   brRacuna++;
   racuni = realloc(racuni, sizeof(Racun_t) * brRacuna);
   racuni[brRacuna-1].id = brRacuna - 1;
   racuni[brRacuna-1].idIzdavaca = idRad;
   racuni[brRacuna-1].idFilma = idFilm;
-  racuni[brRacuna-1].vremeIzdavanja = trenutnoVreme();
-  f = fopen(racuniFajl, "wb");
-  if (f != NULL) {
-    fwrite(&brRacuna, sizeof(int), 1, f);
-    fwrite(racuni, sizeof(Racun_t), brRacuna, f);
-  }
-  fclose(f);
+  printf("Pre vremena\n");
+  //racuni[brRacuna-1].vreme = TrnVreme();
+  trenutnoVreme();
+  strcpy(racuni[brRacuna-1].vreme, vreme);
+  printf("Posle vremena\n");
+  upisiRacune(racuni, brRacuna);
   free(racuni);
   return 0;
 }
@@ -409,29 +433,17 @@ int vracanjeFilma() {
 }
 
 int ispisRacuna() {
-  FILE *f = fopen(racuniFajl, "rb");
-  int brRacuna;
-  Racun_t *racuni;
-  if (f != NULL) {
-    fread(&brRacuna, sizeof(int), 1, f);
-    racuni = malloc(sizeof(Racun_t) * brRacuna);
-    fread(racuni, sizeof(Racun_t), brRacuna, f);
-  }
-  fclose(f);
+  Racun_t *racuni = malloc(0);
+  int brRacuna = iscitajRacune(racuni);
+  
   int i;
   for (i = 0; i < brRacuna; i++) {
     system("cls");
     printf("ID racuna: %i\n", racuni[i].id);
     printf("ID izdatog filma: %i\n", racuni[i].idFilma);
-    f = fopen(videotekaFajl, "rb");
-    int brFilmova;
-    Film_t *filmovi;
-    if (f != NULL) {
-      fread(&brFilmova, sizeof(int), 1, f);
-      filmovi = malloc(sizeof(Film_t) * brFilmova);
-      fread(filmovi, sizeof(Film_t), brFilmova, f);
-    }
-    fclose(f);
+    Film_t *filmovi = malloc(0);
+    int brFilmova = iscitajFilmove(filmovi);
+    
     int j;
     for (j = 0; j < brFilmova; j++) {
       if (filmovi[j].id == racuni[i].idFilma) {
@@ -439,7 +451,7 @@ int ispisRacuna() {
       }
     }
     free(filmovi);
-    printf("Vreme izdavanja filma: %i:%i", racuni[i].vremeIzdavanja->tm_hour, racuni[i].vremeIzdavanja->tm_min);
+    printf("Vreme izdavanja filma: %s", racuni[i].vreme);
     printf("\nDa li zelite sledeci racun ili da prekinete pregled? (enter/q) ");
     int provera = 0;
     while (provera != 'q' && provera != '\n') {
