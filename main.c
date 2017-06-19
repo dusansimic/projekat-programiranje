@@ -3,10 +3,12 @@
 #include "videoteka.h"
 
 int main() {
-  resetujBazu();
+	resetujBazu();
   dodavanjeZanra();
   dodavanjeFilma();
-  dodavanjeRacuna(5, 0);
+  dodavanjeFilma();
+  izdavanjeFilma(5);
+  izdavanjeFilma(5);
   ispisRacuna();
   return 0;
 }
