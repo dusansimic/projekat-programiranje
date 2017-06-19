@@ -12,7 +12,6 @@ typedef struct Film {
   char ime[50];
   float cena;
   int brIzdavan;
-  int stanje;
   int status;
   int idZanr;
 } Film_t;
@@ -30,25 +29,80 @@ typedef struct Racun {
   int idIzdavaca; // id radnika
 } Racun_t;
 
-char vreme[100];
-
-/*Vreme_t TrnVreme()
-{
-  time_t t;
-  time(&t);
-  struct tm *timeinfo;
-  timeinfo = localtime(&t);
-
-  Vreme_t vr;
-  
-  strftime(vr.vreme, 20, "%X", timeinfo);
-  strftime(vr.datum, 20, "%x", timeinfo);
-
-  return vr;
-}*/
-
 int clearScreen() {
   system("@cls||clear");
+  return 0;
+}
+
+int makeTempFilmovi() {
+  FILE *f = fopen(videotekaFajl, "rb");
+  if (f == NULL)
+    return 1;
+  FILE *ftemp = fopen("temp.dat", "wb");
+  if (ftemp == NULL)
+    return 2;
+  Film_t film;
+  while (fread(&film, sizeof(Film_t), 1, f)) {
+    fwrite(&film, sizeof(Film_t), 1, ftemp);
+  }
+  fclose(f);
+  fclose(ftemp);
+  return 0;
+}
+
+int azurirajFilmove(Film_t filmZaUnos) {
+  FILE *f = fopen(videotekaFajl, "wb");
+  if (f == NULL)
+    return 1;
+  FILE *ftemp = fopen("temp.dat", "rb");
+  if (ftemp == NULL)
+    return 2;
+  Film_t film;
+  while (fread(&film, sizeof(Film_t), 1, ftemp)) {
+    if (film.id == filmZaUnos.id) {
+      fwrite(&filmZaUnos, sizeof(Film_t), 1, f);
+    } else {
+      fwrite(&film, sizeof(Film_t), 1, f);
+    }
+  }
+  fclose(f);
+  fclose(ftemp);
+  return 0;
+}
+
+int makeTempZanrovi() {
+  FILE *f = fopen(zanroviFajl, "rb");
+  if (f == NULL)
+    return 1;
+  FILE *ftemp = fopen("temp.dat", "wb");
+  if (ftemp == NULL)
+    return 2;
+  Zanr_t zanr;
+  while (fread(&zanr, sizeof(Zanr_t), 1, f)) {
+    fwrite(&zanr, sizeof(Zanr_t), 1, ftemp);
+  }
+  fclose(f);
+  fclose(ftemp);
+  return 0;
+}
+
+int azurirajZanrove(Zanr_t zanrZaUnos) {
+  FILE *f = fopen(zanroviFajl, "wb");
+  if (f == NULL)
+    return 1;
+  FILE *ftemp = fopen("temp.dat", "rb");
+  if (ftemp == NULL)
+    return 2;
+  Zanr_t zanr;
+  while (fread(&zanr, sizeof(Zanr_t), 1, ftemp)) {
+    if (zanr.id == zanrZaUnos.id) {
+      fwrite(&zanrZaUnos, sizeof(Zanr_t), 1, f);
+    } else {
+      fwrite(&zanr, sizeof(Zanr_t), 1, f);
+    }
+  }
+  fclose(f);
+  fclose(ftemp);
   return 0;
 }
 
@@ -82,7 +136,6 @@ int odabirZanra() {
   while (1) {
     int lastId;
     fseek(f, 0, SEEK_SET);
-    clearScreen();
     while (fread(&tempZanr, sizeof(Zanr_t), 1, f)) {
       printf("\b%i. %s\n", tempZanr.id, tempZanr.ime);
       lastId = tempZanr.id;
@@ -96,6 +149,7 @@ int odabirZanra() {
 }
 
 int dodavanjeFilma() {
+  clearScreen();
   FILE *f = fopen(videotekaFajl, "rb");
   if (f == NULL)
     return 1;
@@ -256,6 +310,7 @@ int brisanjeZanra() { // srki
 // kubini ispisi
 
 int izdavanjeFilma(int idIzdavaca) {
+  clearScreen();
   FILE *f = fopen(videotekaFajl, "rb");
   if (f == NULL)
     return 1;
@@ -264,20 +319,15 @@ int izdavanjeFilma(int idIzdavaca) {
   int o = odabirFilma();
   while (fread(&film, sizeof(Film_t), 1, f)) {
     if (film.id == o) {
-      film.stanje = 0;
       film.brIzdavan++;
       break;
     }
     rBr++;
   }
   fclose(f);
+  makeTempFilmovi(); // pravljenje privremene datoteke za azuriranje
+  azurirajFilmove(film); // azuriranje originalne datoteke
   dodavanjeRacuna(idIzdavaca, film.id);
-  f = fopen(videotekaFajl, "wb");
-  if (f == NULL)
-    return 1;
-  fseek(f, sizeof(Film_t) * rBr, SEEK_SET);
-  fwrite(&film, sizeof(Film_t), 1, f);
-  fclose(f);
   return 0;
 }
 
@@ -321,7 +371,6 @@ int vracanjeFilma() {
   int o = odabirFilma();
   while (fread(&film, sizeof(Film_t), 1, f)) {
     if (film.id == o) {
-      film.stanje = 1;
       break;
     }
     rBr++;
@@ -381,7 +430,7 @@ int resetujBazu() {
   if (f != NULL) {
     fwrite(filmovi, sizeof(Film_t), br, f);
   } else
-    printf("Greska pri radu sa fajlom\n");
+    printf("Greska pri radu sa fajlom\n\b(filmovi)\n");
   free(filmovi);
 
   Zanr_t *zanrovi = malloc(0);
@@ -389,7 +438,7 @@ int resetujBazu() {
   if (f != NULL) {
     fwrite(zanrovi, sizeof(Zanr_t), br, f);
   } else
-    printf("Greska pri radu sa fajlom\n");
+    printf("Greska pri radu sa fajlom\n\b(zanrovi)\n");
   free(zanrovi);
 
   Racun_t *racuni = malloc(0);
@@ -397,8 +446,15 @@ int resetujBazu() {
   if (f != NULL) {
     fwrite(racuni, sizeof(Racun_t), br, f);
   } else
-    printf("Greska pri radu sa fajlom\n");
+    printf("Greska pri radu sa fajlom\n\b(racuni)\n");
   free(racuni);
+
+  Film_t film;
+  f = fopen("temp.dat", "wb");
+  if (f != NULL) {
+    fwrite(&film, sizeof(Film_t), br, f);
+  } else
+    printf("Greska pri radu sa fajlom\n\b(temp)\n");
 
   printf("Baza podataka je uspesno resetovana!\n");
   return 0;
