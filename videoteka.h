@@ -29,6 +29,8 @@ typedef struct Racun {
   int idIzdavaca; // id radnika
 } Racun_t;
 
+Film_t popularnost[5];
+
 int clearScreen() {
   system("@cls||clear");
   return 0;
@@ -309,6 +311,165 @@ int brisanjeZanra() { // srki
 
 // kubini ispisi
 
+int glavniMeni() {
+  int state = 1;
+  int filmId;
+  while (state) {
+    int o = izborFilma();
+    switch (o) {
+      case 0:
+        state = 0;
+        break;
+      case 1:
+        state = 0;
+        filmId = izborFilmaPoImenu();
+        break;
+      case 2:
+        state = 0;
+        filmId = izborFilmaPoZanru();
+        break;
+      case 3:
+        state = 0;
+        filmId = izborFilmaPoPopularnosti();
+        break;
+    }
+  }
+  return filmId;
+}
+
+int sortirajPoPopularnosti() {
+  FILE *f = fopen(videotekaFajl, "rb");
+  if (f == NULL)
+    return 1;
+  Film_t film;
+  popularnost[0].brIzdavan = 0;
+  popularnost[1].brIzdavan = 0;
+  popularnost[2].brIzdavan = 0;
+  popularnost[3].brIzdavan = 0;
+  popularnost[4].brIzdavan = 0;
+  while (fread(&film, sizeof(Film_t), 1, f)) {
+    if (film.brIzdavan >= popularnost[0].brIzdavan) {
+      popularnost[0] = film;
+    }
+  }
+  fseek(f, 0, SEEK_SET);
+  while (fread(&film, sizeof(Film_t), 1, f)) {
+    if (film.id != popularnost[0].id && film.brIzdavan >= popularnost[1].brIzdavan) {
+      popularnost[1] = film;
+    }
+  }
+  fseek(f, 0, SEEK_SET);
+  while (fread(&film, sizeof(Film_t), 1, f)) {
+    if (film.id != popularnost[0].id && \
+        film.id != popularnost[1].id && \
+        film.brIzdavan >= popularnost[2].brIzdavan) {
+      popularnost[2] = film;
+    }
+  }
+  fseek(f, 0, SEEK_SET);
+  while (fread(&film, sizeof(Film_t), 1, f)) {
+    if (film.id != popularnost[0].id && \
+        film.id != popularnost[1].id && \
+        film.id != popularnost[2].id && \
+        film.brIzdavan >= popularnost[3].brIzdavan) {
+      popularnost[3] = film;
+    }
+  }
+  fseek(f, 0, SEEK_SET);
+  while (fread(&film, sizeof(Film_t), 1, f)) {
+    if (film.id != popularnost[0].id && \
+        film.id != popularnost[1].id && \
+        film.id != popularnost[2].id && \
+        film.id != popularnost[3].id && \
+        film.brIzdavan >= popularnost[4].brIzdavan) {
+      popularnost[4] = film;
+    }
+  }
+  return 0;
+}
+
+int izborFilma() {
+  int o;
+  while (1) {
+    clearScreen();
+    printf("\b1) Odabir filma po imenu\n");
+    printf("\b2) Odabir filma zanru\n");
+    printf("\b3) Odabir filma po popularnosti\n");
+    printf("\b0) Prekinite biranje\n");
+    printf("Unesite vas izbor: ");
+    scanf("%i", &o);
+    if (o > 0 && o < 4)
+      break;
+  }
+  return o;
+}
+
+int izborFilmaPoImenu() {
+  FILE *f = fopen(videotekaFajl, "rb");
+  if (f == NULL)
+    return -1;
+  Film_t film;
+  char imeFilma[50];
+  fflush(stdin);
+  fgets(imeFilma, 50, stdin);
+  fflush(stdin);
+  while (fread(&film, sizeof(Film_t), 1, f)) {
+    if (strcmp(imeFilma, film.ime) == 0)
+      break;
+  }
+  return film.id;
+}
+
+int izborFilmaPoZanru() {
+  FILE *f = fopen(videotekaFajl, "rb");
+  if (f == NULL)
+    return -1;
+  int o = odabirZanra();
+  Film_t film;
+  int p;
+  int minId = -1, maxId = 0;
+  while (1) {
+    fseek(f, 0, SEEK_SET);
+    clearScreen();
+    while (fread(&film, sizeof(Film_t), 1, f)) {
+      if (film.idZanr == o) {
+        if (minId < 0)
+          minId = film.id;
+        maxId = film.id;
+        printf("%i. %s\n", film.id, film.ime);
+      }
+    }
+    printf("Unesite id izabranog filma: ");
+    fflush(stdin);
+    scanf("%i", &p);
+    fflush(stdin);
+    if (p >= minId && p <= maxId)
+      break;
+  }
+  return p;
+}
+
+int izborFilmaPoPopularnosti() {
+  FILE *f = fopen(videotekaFajl, "rb");
+  if (f == NULL)
+    return 0;
+  sortirajPoPopularnosti();
+  int i;
+  int o;
+  while (1) {
+    clearScreen();
+    for (i = 0; i < 5; i++) {
+      printf("%i) %s", popularnost[i].id, popularnost[i].ime);
+    }
+    printf("-1) Prekinite biranje");
+    printf("Unesite id izabranog filma: ");
+    fflush(stdin);
+    scanf("%i", &o);
+    fflush(stdin);
+  }
+  return o;
+}
+
 int izdavanjeFilma(int idIzdavaca) {
   clearScreen();
   FILE *f = fopen(videotekaFajl, "rb");
@@ -316,7 +477,7 @@ int izdavanjeFilma(int idIzdavaca) {
     return 1;
   int rBr = 0;
   Film_t film;
-  int o = odabirFilma();
+  int o = glavniMeni();
   while (fread(&film, sizeof(Film_t), 1, f)) {
     if (film.id == o) {
       film.brIzdavan++;
