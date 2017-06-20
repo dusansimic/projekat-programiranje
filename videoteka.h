@@ -212,12 +212,8 @@ int brisanjeFilma() {
     }
   }
   fclose(f);
-  f = fopen(videotekaFajl, "wb");
-  if (f == NULL)
-    return 1;
-  fseek(f, sizeof(Film_t) * rBr, SEEK_SET);
-  fwrite(&film, sizeof(Film_t), 1, f);
-  fclose(f);
+  makeTempFilmovi();
+  azurirajFilmove(film);
   return 0;
 }
 
@@ -243,12 +239,8 @@ int azuriranjeFilma() {
     rBr++;
   }
   fclose(f);
-  f = fopen(videotekaFajl, "wb");
-  if (f == NULL)
-    return 1;
-  fseek(f, sizeof(Film_t) * rBr, SEEK_SET);
-  fwrite(&film, sizeof(Film_t), 1, f);
-  fclose(f);
+  makeTempFilmovi();
+  azurirajFilmove(film);
   return 0;
 }
 
@@ -285,19 +277,15 @@ int azuriranjeZanra(){ // srki
   while (fread(&zanr, sizeof(Zanr_t), 1, f)) {
     if (zanr.id == o) {
       printf("Unesite ime zanra (%s): ", zanr.ime);
-      fgets(zanr.ime, 50, stdin);
+      scanf("%s", zanr.ime);
       fflush(stdin);
       break;
     }
     rBr++;
   }
   fclose(f);
-  f = fopen(zanroviFajl, "wb");
-  if (f == NULL)
-    return 1;
-  fseek(f, sizeof(Zanr_t) * rBr, SEEK_SET);
-  fwrite(&zanr, sizeof(Zanr_t), 1, f);
-  fclose(f);
+  makeTempZanrovi();
+  azurirajZanrove(zanr);
   return 0;
 }
 
@@ -315,12 +303,8 @@ int brisanjeZanra() { // srki
     }
   }
   fclose(f);
-  f = fopen(zanroviFajl, "wb");
-  if (f == NULL)
-    return 1;
-  fseek(f, sizeof(Zanr_t) * rBr, SEEK_SET);
-  fwrite(&zanr, sizeof(Zanr_t), 1, f);
-  fclose(f);
+  makeTempZanrovi();
+  azurirajZanrove(zanr);
   return 0;
 }
 

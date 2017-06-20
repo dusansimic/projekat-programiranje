@@ -397,7 +397,7 @@ void Login(){
         printf("4) ispis Svih \n");
         printf("5) ispis statusa zaposlenih \n");
         printf("6) brisanje fajlova \n");
-        printf("1970 KRAJ \n");
+        printf("7) KRAJ \n");
         scanf("%d",&izbor);
         clrscr();
         switch(izbor){
@@ -420,7 +420,7 @@ void Login(){
           do{
             printf("1) brisanje zaposlenih \n");
             printf("2) brisanje statusa zaposlenih \n");
-            printf("1312 back \n");
+            printf("3) back \n");
             scanf("%d",&izbor);
             system("pause");
             clrscr();
@@ -434,12 +434,12 @@ void Login(){
                 fclose(f);
                 break;
             }
-          }while( ((izbor != 1) && (izbor != 2)) && (izbor != 1312) );
+          }while( ((izbor != 1) && (izbor != 2)) && (izbor != 3) );
 
           break;
         }
 
-      }while( izbor != 1970 );
+      }while( izbor != 7 );
     }
 
   }
