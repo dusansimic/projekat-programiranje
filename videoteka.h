@@ -36,6 +36,16 @@ int clearScreen() {
   return 0;
 }
 
+int obrisiSlRed(char *string) {
+  int i = 0;
+  while (string[i] != '\0') {
+    if (string[i] == '\n')
+      string[i] = '\0';
+    i++;
+  }
+  return 0;
+}
+
 int makeTempFilmovi() {
   FILE *f = fopen(videotekaFajl, "rb");
   if (f == NULL)
@@ -118,8 +128,10 @@ int odabirFilma() {
     clearScreen();
     int lastId;
     while (fread(&film, sizeof(Film_t), 1, f)) {
-      printf("\b%i. %s\n", film.id, film.ime);
-      lastId = film.id;
+      if (!film.status) {
+        printf("\b%i. %s\n", film.id, film.ime);
+        lastId = film.id;
+      }
     }
     printf("Unesite id odabranog filma: ");
     scanf("%i", &o);
@@ -166,8 +178,9 @@ int dodavanjeFilma() {
   Film_t film;
   film.id = brFilmova;
   printf("Unesite ime filma: ");
-  //fgets(filmovi[brFilmova-1].ime, 50, stdin);
-  scanf("%s", film.ime);
+  fflush(stdin);
+  fgets(film.ime, 50, stdin);
+  obrisiSlRed(film.ime);
   fflush(stdin);
   printf("Unesite cenu filma: ");
   scanf("%f", &(film.cena));
@@ -175,13 +188,13 @@ int dodavanjeFilma() {
   film.status = 0;
 
   int odabranZanr = odabirZanra();
-  
+
   film.idZanr = odabranZanr;
-  
+
   fwrite(&film, sizeof(Film_t), 1, f);
 
   fclose(f);
-  
+
   return 0;
 }
 
@@ -218,9 +231,11 @@ int azuriranjeFilma() {
   while (fread(&film, sizeof(Film_t), 1, f)) {
     if (film.id == o) {
       printf("Unesite ime filma (%s): ", film.ime);
-      fgets(film.ime, 50, stdin);
       fflush(stdin);
-      printf("Unseite cenu filma (%f): ", film.cena);
+      fgets(film.ime, 50, stdin);
+      obrisiSlRed(film.ime);
+      fflush(stdin);
+      printf("Unseite cenu filma (%.2f): ", film.cena);
       scanf("%f", &(film.cena));
       fflush(stdin);
       break;
@@ -348,13 +363,13 @@ int sortirajPoPopularnosti() {
   popularnost[3].brIzdavan = 0;
   popularnost[4].brIzdavan = 0;
   while (fread(&film, sizeof(Film_t), 1, f)) {
-    if (film.brIzdavan >= popularnost[0].brIzdavan) {
+    if (film.brIzdavan >= popularnost[0].brIzdavan && !film.status) {
       popularnost[0] = film;
     }
   }
   fseek(f, 0, SEEK_SET);
   while (fread(&film, sizeof(Film_t), 1, f)) {
-    if (film.id != popularnost[0].id && film.brIzdavan >= popularnost[1].brIzdavan) {
+    if (film.id != popularnost[0].id && film.brIzdavan >= popularnost[1].brIzdavan && !film.status) {
       popularnost[1] = film;
     }
   }
@@ -362,7 +377,8 @@ int sortirajPoPopularnosti() {
   while (fread(&film, sizeof(Film_t), 1, f)) {
     if (film.id != popularnost[0].id && \
         film.id != popularnost[1].id && \
-        film.brIzdavan >= popularnost[2].brIzdavan) {
+        film.brIzdavan >= popularnost[2].brIzdavan && \
+        !film.status) {
       popularnost[2] = film;
     }
   }
@@ -371,7 +387,8 @@ int sortirajPoPopularnosti() {
     if (film.id != popularnost[0].id && \
         film.id != popularnost[1].id && \
         film.id != popularnost[2].id && \
-        film.brIzdavan >= popularnost[3].brIzdavan) {
+        film.brIzdavan >= popularnost[3].brIzdavan && \
+        !film.status) {
       popularnost[3] = film;
     }
   }
@@ -381,7 +398,8 @@ int sortirajPoPopularnosti() {
         film.id != popularnost[1].id && \
         film.id != popularnost[2].id && \
         film.id != popularnost[3].id && \
-        film.brIzdavan >= popularnost[4].brIzdavan) {
+        film.brIzdavan >= popularnost[4].brIzdavan && \
+        !film.status) {
       popularnost[4] = film;
     }
   }
@@ -410,11 +428,13 @@ int izborFilmaPoImenu() {
     return -1;
   Film_t film;
   char imeFilma[50];
+  printf("Unesite ime filma za trazenje: ");
   fflush(stdin);
   fgets(imeFilma, 50, stdin);
+  obrisiSlRed(imeFilma);
   fflush(stdin);
   while (fread(&film, sizeof(Film_t), 1, f)) {
-    if (strcmp(imeFilma, film.ime) == 0)
+    if (strcmp(imeFilma, film.ime) == 0 && !film.status)
       break;
   }
   return film.id;
@@ -432,7 +452,7 @@ int izborFilmaPoZanru() {
     fseek(f, 0, SEEK_SET);
     clearScreen();
     while (fread(&film, sizeof(Film_t), 1, f)) {
-      if (film.idZanr == o) {
+      if (film.idZanr == o && !film.status) {
         if (minId < 0)
           minId = film.id;
         maxId = film.id;
@@ -456,17 +476,15 @@ int izborFilmaPoPopularnosti() {
   sortirajPoPopularnosti();
   int i;
   int o;
-  while (1) {
-    clearScreen();
-    for (i = 0; i < 5; i++) {
-      printf("%i) %s", popularnost[i].id, popularnost[i].ime);
-    }
-    printf("-1) Prekinite biranje");
-    printf("Unesite id izabranog filma: ");
-    fflush(stdin);
-    scanf("%i", &o);
-    fflush(stdin);
+  clearScreen();
+  for (i = 0; i < 5; i++) {
+    printf("%i) %s\n", popularnost[i].id, popularnost[i].ime);
   }
+  printf("-1) Prekinite biranje\n");
+  printf("Unesite id izabranog filma: ");
+  fflush(stdin);
+  scanf("%i", &o);
+  fflush(stdin);
   return o;
 }
 
@@ -523,7 +541,7 @@ int dodavanjeRacuna(int idRad, int idFilm) {
   return 0;
 }
 
-int vracanjeFilma() {
+int vracanjeFilma() { // ne koristi se
   FILE *f = fopen(videotekaFajl, "rb");
   if (f == NULL)
     return 1;
@@ -553,8 +571,8 @@ int ispisRacuna() {
   Racun_t racun;
   while (fread(&racun, sizeof(Racun_t), 1, f)) {
     clearScreen();
-    printf("ID racuna: %i\n", racun.id);
-    printf("ID izdatog filma: %i\n", racun.idFilma);
+    printf("\n\n\n\n\tID racuna: %i\n\n", racun.id);
+    printf("\tID izdatog filma: %i\n\n", racun.idFilma);
     FILE *ffilmovi = fopen(videotekaFajl, "rb");
     if (ffilmovi == NULL) {
       fclose(f);
@@ -566,9 +584,9 @@ int ispisRacuna() {
         break;
     }
     fclose(ffilmovi);
-    
-    printf("Ime izdatog filma: %s\n", film.ime);
-    printf("Vreme izdavanja filma: %i:%i\n", racun.vremeIzdavanja->tm_hour, racun.vremeIzdavanja->tm_min);
+
+    printf("\tIme izdatog filma: %s\n\n", film.ime);
+    printf("\tVreme izdavanja filma: %i:%i\n\n", racun.vremeIzdavanja->tm_hour, racun.vremeIzdavanja->tm_min);
     printf("Da li zelite sledeci racun ili da prekinete pregled? (enter/q) ");
     int provera = 0;
     while (provera != 'q' && provera != '\n') {
@@ -586,31 +604,27 @@ int ispisRacuna() {
 // srediti da se koriste nove funkcije za citanje i pisanje
 int resetujBazu() {
   int br = 0;
-  Film_t *filmovi = malloc(0);
+  Film_t film;
   FILE *f = fopen(videotekaFajl, "wb");
   if (f != NULL) {
-    fwrite(filmovi, sizeof(Film_t), br, f);
+    fwrite(&film, sizeof(Film_t), br, f);
   } else
     printf("Greska pri radu sa fajlom\n\b(filmovi)\n");
-  free(filmovi);
 
-  Zanr_t *zanrovi = malloc(0);
+  Zanr_t zanr;
   f = fopen(zanroviFajl, "wb");
   if (f != NULL) {
-    fwrite(zanrovi, sizeof(Zanr_t), br, f);
+    fwrite(&zanr, sizeof(Zanr_t), br, f);
   } else
     printf("Greska pri radu sa fajlom\n\b(zanrovi)\n");
-  free(zanrovi);
 
-  Racun_t *racuni = malloc(0);
+  Racun_t racun;
   f = fopen(racuniFajl, "wb");
   if (f != NULL) {
-    fwrite(racuni, sizeof(Racun_t), br, f);
+    fwrite(&racun, sizeof(Racun_t), br, f);
   } else
     printf("Greska pri radu sa fajlom\n\b(racuni)\n");
-  free(racuni);
 
-  Film_t film;
   f = fopen("temp.dat", "wb");
   if (f != NULL) {
     fwrite(&film, sizeof(Film_t), br, f);
