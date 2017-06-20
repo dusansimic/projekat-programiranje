@@ -151,8 +151,10 @@ int odabirZanra() {
     int lastId;
     fseek(f, 0, SEEK_SET);
     while (fread(&tempZanr, sizeof(Zanr_t), 1, f)) {
-      printf("\b%i. %s\n", tempZanr.id, tempZanr.ime);
-      lastId = tempZanr.id;
+      if (!tempZanr.status) {
+        printf("\b%i. %s\n", tempZanr.id, tempZanr.ime);
+        lastId = tempZanr.id;
+      }
     }
     printf("Unesite id odabranog zanra: ");
     scanf("%i", &o);
